@@ -128,4 +128,4 @@ Ver archivo origendemo-malla.py
 - https://hub.docker.com/repository/docker/miguelmanuttupa/lchcimage-brz-origendemo/general
 
 ## Ver Repositorio de Plataforma de datos
-- 
+- https://github.com/miguelangelmanuttupaligas/DataPlatformMinikube
