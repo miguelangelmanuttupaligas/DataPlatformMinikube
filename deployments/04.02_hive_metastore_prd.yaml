@@ -1,0 +1,105 @@
+# Hive Metastore Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-metastore-prd
+  namespace: metastore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hive-metastore-prd
+  template:
+    metadata:
+      labels:
+        app: hive-metastore-prd
+    spec:
+      containers:
+        - name: hive-metastore-prd
+          image: starburstdata/hive:3.1.3-e.14
+          ports:
+            - containerPort: 9083
+          env:
+            - name: HIVE_METASTORE_DRIVER
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-metastore-prd-config
+                  key: POSTGRES_DRIVER
+
+            - name: HIVE_METASTORE_JDBC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-metastore-prd-config
+                  key: POSTGRES_JDBC_URL
+
+            - name: HIVE_METASTORE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-metastore-prd-config
+                  key: POSTGRES_USER
+
+            - name: HIVE_METASTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-metastore-prd-secret
+                  key: POSTGRES_PASSWORD
+
+            - name: HIVE_METASTORE_WAREHOUSE_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: hive-metastore-prd-config
+                  key: HIVE_METASTORE_WAREHOUSE_DIR
+
+            - name: S3_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: hive-metastore-prd-config
+                  key: S3_ENDPOINT
+
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-prd-secret
+                  key: MINIO_HIVE_USER
+
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hive-metastore-prd-secret
+                  key: MINIO_HIVE_PASSWORD
+
+
+            - name: S3_PATH_STYLE_ACCESS
+              value: "true"
+            - name: REGION
+              value: ""
+            - name: HIVE_METASTORE_USERS_IN_ADMIN_ROLE
+              value: admin
+            - name: GOOGLE_CLOUD_KEY_FILE_PATH
+              value: ""
+            - name: AZURE_ADL_CLIENT_ID
+              value: ""
+            - name: AZURE_ADL_CREDENTIAL
+              value: ""
+            - name: AZURE_ADL_REFRESH_URL
+              value: ""
+            - name: AZURE_ABFS_STORAGE_ACCOUNT
+              value: ""
+            - name: AZURE_ABFS_ACCESS_KEY
+              value: ""
+            - name: AZURE_WASB_STORAGE_ACCOUNT
+              value: ""
+            - name: AZURE_ABFS_OAUTH
+              value: ""
+            - name: AZURE_ABFS_OAUTH_TOKEN_PROVIDER
+              value: ""
+            - name: AZURE_ABFS_OAUTH_CLIENT_ID
+              value: ""
+            - name: AZURE_ABFS_OAUTH_SECRET
+              value: ""
+            - name: AZURE_ABFS_OAUTH_ENDPOINT
+              value: ""
+            - name: AZURE_WASB_ACCESS_KEY
+              value: ""
+
+---

@@ -1,0 +1,41 @@
+
+# ServiceAccount para los pods singleuser, con permisos para ejecutar Spark sobre K8s
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark-sa-kyuubi
+  namespace: kyuubi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spark-driver-role-kyuubi
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "endpoints", "persistentvolumeclaims", "configmaps", "secrets"]
+    verbs: ["create", "get", "list", "watch", "delete", "deletecollection", "patch","update"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get","list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]  # Para ver logs del Spark driver
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "get", "list", "delete","patch","update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spark-driver-binding-kyuubi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spark-driver-role-kyuubi
+subjects:
+  - kind: ServiceAccount
+    name: spark-sa-kyuubi
+    namespace: kyuubi

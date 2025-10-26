@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-metastore-dev-config
+  namespace: metastore
+data:
+  POSTGRES_USER: "hiveA1afv129ads"
+  POSTGRES_DB: "metastore"
+  POSTGRES_JDBC_URL: "jdbc:postgresql://postgresdb-metastore-dev:5432/metastore"
+  POSTGRES_DRIVER: "org.postgresql.Driver"

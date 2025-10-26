@@ -1,0 +1,122 @@
+# This file can update the JupyterHub Helm chart's default configuration values.
+#
+# For reference see the configuration reference and default values, but make
+# sure to refer to the Helm chart version of interest to you!
+#
+# Introduction to YAML:     https://www.youtube.com/watch?v=cdLNKUoMc6c
+# Chart config reference:   https://zero-to-jupyterhub.readthedocs.io/en/stable/resources/reference.html
+# Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+# Available chart versions: https://hub.jupyter.org/helm-chart/
+#
+hub:
+  db:
+    type: postgres
+    url: postgresql://jupyterhub34rf456h:24F3J13DIU4FFHJIasd@postgresdb-jupyterhub:5432/jupyterhub
+  
+  networkPolicy:
+    enabled: false
+  
+  serviceAccount:
+    create: false       # Usar un ServiceAccount preexistente
+    name: jupyterhub-sa # Este SA debe tener permisos básicos (por ejemplo, rol 'view')
+
+  config:
+    JupyterHub:
+      authenticator_class: ldapauthenticator.LDAPAuthenticator
+    
+    Authenticator:
+      enable_auth_state: true
+      allow_all: true
+          
+    LDAPAuthenticator:
+      server_address: openldap.data-services.svc.cluster.local
+      server_port: 389
+      use_ssl: false
+      allowed_groups:
+        - cn=admins,ou=DataModelers,ou=DataAnalytics,ou=Groups,dc=cajafinanciera,dc=com
+        - cn=devs,ou=DataModelers,ou=DataAnalytics,ou=Groups,dc=cajafinanciera,dc=com
+      lookup_dn: true
+      lookup_dn_search_user: cn=ldapreader24g890uwef,ou=Users,dc=cajafinanciera,dc=com
+      lookup_dn_search_password: 24f98ifwe9ua
+      lookup_dn_search_filter: "(uid={login})"
+      lookup_dn_user_dn_attribute: cn
+      user_search_base: ou=Users,dc=cajafinanciera,dc=com
+      user_attribute: uid
+      group_search_filter: "(member={userdn})"
+      tls_strategy: "insecure"
+
+  extraConfig:
+    ldapUser: |
+      from kubespawner import KubeSpawner
+      def set_user_env(spawner: KubeSpawner):
+          username = spawner.user.name
+          if spawner.environment is None:
+              spawner.environment = {}
+          spawner.environment.update({
+              "JUPYTERHUB_USER": username,
+              "NB_USER": username,
+              "NB_UID": "1000",
+              "CHOWN_HOME": "yes",
+          })
+      c.Spawner.pre_spawn_hook = set_user_env
+
+rbac:
+  create: true # Permite que Helm cree Roles y RoleBindings si lo necesitas
+
+singleuser:
+  networkPolicy:
+    enabled: false
+      
+  image:
+    name: miguelmanuttupa/pyspark-notebook
+    tag: 3.5.0.1
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+  profileList:
+    - display_name: "PySpark Notebook 3.5.0 + Delta Lake"
+      description: "Entorno PySpark personalizado con librerías preinstaladas"
+      default: true
+      kubespawner_override:
+        image: miguelmanuttupa/pyspark-notebook:3.5.0.1
+
+    # - display_name: "Data Science Notebook"
+    #   description: "Entorno general con scikit-learn, pandas, matplotlib"
+    #   kubespawner_override:
+    #     image: jupyter/datascience-notebook:hub-4.0.2
+
+
+  serviceAccountName: spark-sa-jupyterhub # Este SA tendrá permisos para lanzar Spark drivers en K8s
+
+  cmd:
+  uid: 0
+  
+  extraEnv:
+    POD_NAMESPACE: "jupyterhub"
+    SERVICE_ACCOUNT_NAME: "spark-sa-jupyterhub"
+    S3_ENDPOINT_URL: "http://minio.data-services.svc.cluster.local:9000"
+    ACCESS_KEY: "hive-key-dev-4g78923"
+    SECRET_KEY: "hive-secret-dev-d249824g98"
+    WAREHOUSE_DIR: "s3a://warehouse-dev/"
+    METASTORE_URI: "thrift://hive-metastore-dev.metastore.svc.cluster.local:9083"
+
+  
+  storage:
+    type: dynamic
+    capacity: 10Gi
+    homeMountPath: /home/{username} #/home/jovyan/work
+    dynamic:
+      storageClass: standard  # o el que tengas disponible en `kubectl get sc`
+  
+  cpu:
+    limit: 3
+    guarantee: 2
+  memory:
+    limit: 6G
+    guarantee: 4G
+  
+proxy:
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30080  # Puedes elegir cualquier puerto disponible entre 30000–32767

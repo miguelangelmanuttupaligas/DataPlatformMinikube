@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-metastore-prd-config
+  namespace: metastore
+data:
+  POSTGRES_USER: "hiveprd9823s"
+  POSTGRES_DB: "metastore"
+  POSTGRES_JDBC_URL: "jdbc:postgresql://postgresdb-metastore-prd:5432/metastore"
+  POSTGRES_DRIVER: "org.postgresql.Driver"

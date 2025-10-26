@@ -1,0 +1,290 @@
+---
+# (Contenido anterior no repetido por brevedad)
+
+# PySpark Deployment and Service
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: pyspark
+#   namespace: data-services
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: pyspark
+#   template:
+#     metadata:
+#       labels:
+#         app: pyspark
+#     spec:
+#       containers:
+#         - name: pyspark
+#           image: custom-pyspark:3.5.0
+#           ports:
+#             - containerPort: 4040
+#             - containerPort: 8888
+#           env:
+#             - name: GRANT_SUDO
+#               value: "yes"
+#             - name: SPARK_MASTER
+#               value: local[*]
+#             - name: SPARK_HIVE_METASTORE_URIS
+#               value: thrift://hive-metastore:9083
+#             - name: SPARK_HIVE_WAREHOUSE_DIR
+#               value: s3a://warehouse/
+#             - name: SPARK_S3_ENDPOINT
+#               value: http://minio:9000
+#             - name: SPARK_S3_ACCESS_KEY
+#               value: minioadmin
+#             - name: SPARK_S3_SECRET_KEY
+#               value: minioadmin
+#             - name: SPARK_S3_PATH_STYLE_ACCESS
+#               value: "true"
+#           volumeMounts:
+#             - name: jars-volume
+#               mountPath: /home/jovyan/jars
+#               readOnly: true
+#             - name: work-volume
+#               mountPath: /home/jovyan/work
+#       volumes:
+#         - name: jars-volume
+#           hostPath:
+#             path: /path/to/spark/jars
+#         - name: work-volume
+#           hostPath:
+#             path: /path/to/work
+---
+# Spark Master Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-master
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-master
+  template:
+    metadata:
+      labels:
+        app: spark-master
+    spec:
+      containers:
+        - name: spark-master
+          image: custom-spark:3.5.0
+          env:
+            - name: SPARK_MODE
+              value: master
+            - name: SPARK_LOCAL_IP
+              value: spark-master
+          ports:
+            - name: port1
+              containerPort: 4040
+            - name: port2
+              containerPort: 7077
+            - name: port3
+              containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-master
+  namespace: data-services
+spec:
+  selector:
+    app: spark-master
+  ports:
+    - name: port1
+      port: 7077
+      targetPort: 7077
+    - name: port2
+      port: 8080
+      targetPort: 8080
+---
+# Spark Worker 1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-worker-1
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-worker-1
+  template:
+    metadata:
+      labels:
+        app: spark-worker-1
+    spec:
+      containers:
+        - name: spark-worker
+          image: custom-spark:3.5.0
+          env:
+            - name: SPARK_MODE
+              value: worker
+            - name: SPARK_MASTER_URL
+              value: spark://spark-master:7077
+---
+# Spark Worker 2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-worker-2
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-worker-2
+  template:
+    metadata:
+      labels:
+        app: spark-worker-2
+    spec:
+      containers:
+        - name: spark-worker
+          image: custom-spark:3.5.0
+          env:
+            - name: SPARK_MODE
+              value: worker
+            - name: SPARK_MASTER_URL
+              value: spark://spark-master:7077
+---
+# Spark Thrift Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-thriftserver
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-thriftserver
+  template:
+    metadata:
+      labels:
+        app: spark-thriftserver
+    spec:
+      containers:
+        - name: spark-thriftserver
+          image: custom-spark:3.5.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              /opt/bitnami/spark/sbin/start-thriftserver.sh \
+              --master spark://spark-master:7077 \
+              --conf hive.server2.thrift.bind.host=0.0.0.0 \
+              --conf hive.server2.thrift.port=10000 \
+              --conf spark.sql.catalogImplementation=hive \
+              --conf hive.metastore.uris=thrift://hive-metastore:9083 \
+              --conf spark.sql.warehouse.dir=s3a://warehouse/ \
+              --conf spark.hadoop.fs.s3a.access.key=minioadmin \
+              --conf spark.hadoop.fs.s3a.secret.key=minioadmin \
+              --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+              --conf spark.hadoop.fs.s3a.path.style.access=true \
+              --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+              --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+              --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+          ports:
+            - containerPort: 10000
+            - containerPort: 4040
+---
+# Trino Coordinator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trino-coordinator
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trino-coordinator
+  template:
+    metadata:
+      labels:
+        app: trino-coordinator
+    spec:
+      containers:
+        - name: trino
+          image: trinodb/trino:450
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: trino-config
+              mountPath: /etc/trino
+              readOnly: true
+      volumes:
+        - name: trino-config
+          hostPath:
+            path: /host/path/trino/etc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino-coordinator
+  namespace: data-services
+spec:
+  selector:
+    app: trino-coordinator
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# SQL Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sqlserver
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sqlserver
+  template:
+    metadata:
+      labels:
+        app: sqlserver
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      containers:
+        - name: sqlserver
+          image: mcr.microsoft.com/mssql/server:2022-CU10-ubuntu-22.04
+          ports:
+            - containerPort: 1433
+          env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: MSSQL_PID
+              value: Developer
+            - name: MSSQL_USER
+              value: sa
+            - name: MSSQL_SA_PASSWORD
+              value: YourStrong@Passw0rd
+            - name: MSSQL_COLLATION
+              value: SQL_Latin1_General_CP1_CI_AS
+          volumeMounts:
+            - name: sqlserver-storage
+              mountPath: /var/opt/mssql/data
+      volumes:
+        - name: sqlserver-storage
+          persistentVolumeClaim:
+            claimName: data-sqlserver-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sqlserver
+  namespace: data-services
+spec:
+  selector:
+    app: sqlserver
+  ports:
+    - port: 1433
+      targetPort: 1433

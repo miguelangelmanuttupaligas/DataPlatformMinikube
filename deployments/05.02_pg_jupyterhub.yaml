@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresdb-jupyterhub
+  namespace: jupyterhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresdb-jupyterhub
+  template:
+    metadata:
+      labels:
+        app: postgresdb-jupyterhub
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          envFrom:
+            - configMapRef:
+                name: postgres-jupyterhub-config
+            - secretRef:
+                name: postgres-jupyterhub-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-jupyterhub-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-jupyterhub-storage
+          hostPath:
+            path: /mnt/nfs-postgres-jhub
+            type: Directory

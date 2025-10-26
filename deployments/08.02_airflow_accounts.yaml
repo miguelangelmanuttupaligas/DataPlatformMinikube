@@ -1,0 +1,83 @@
+
+# ServiceAccount para los pods singleuser, con permisos para ejecutar Spark sobre K8s
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark-sa-airflow
+  namespace: airflow
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role #ClusterRole
+metadata:
+  name: spark-driver-role-airflow
+  namespace: airflow
+rules:
+  # Pods: crear driver/exec, listar, eliminar y limpiar al final
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "watch", "delete", "deletecollection"]
+  # Logs de los pods
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
+  # Servicios (para comunicación interna del driver/exec)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "get", "list", "watch", "delete","deletecollection", "patch", "update"]
+  # Endpoints (cuando Spark registra driver service)
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  # ConfigMaps y Secrets (Spark los usa para pasar configuración/envs)
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["create", "get", "list", "watch", "delete","deletecollection", "patch", "update"]
+  # PVCs (solo si realmente tus jobs Spark montan volúmenes)
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete","deletecollection"]
+  # ServiceAccounts (solo lectura, Spark necesita mirar el token de ejecución)
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list"]
+  # Jobs batch (si usas SparkSubmit con KubernetesOperator que cree Jobs)
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  # (Opcional, útil si accedes a la UI vía proxy del Service)
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    verbs: ["get", "list"]
+  # (Opcional) Events para mejor observabilidad
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "get", "list", "watch"]
+  # - apiGroups: [""]
+  #   resources: ["pods", "pods/log", "services", "endpoints", "persistentvolumeclaims", "configmaps", "secrets"]
+  #   verbs: ["create", "get", "list", "watch", "delete", "deletecollection", "patch","update"]
+  # - apiGroups: [""]
+  #   resources: ["serviceaccounts"]
+  #   verbs: ["get","list"]
+  # - apiGroups: ["batch"]
+  #   resources: ["jobs"]
+  #   verbs: ["create", "get", "list", "delete"]
+  # - apiGroups: [""]  # Para ver logs del Spark driver
+  #   resources: ["pods/log"]
+  #   verbs: ["get", "list"]
+  # - apiGroups: ["apps"]
+  #   resources: ["deployments"]
+  #   verbs: ["create", "get", "list", "delete","patch","update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding #ClusterRoleBinding
+metadata:
+  name: spark-driver-binding-airflow
+  namespace: airflow
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role #ClusterRole
+  name: spark-driver-role-airflow
+subjects:
+  - kind: ServiceAccount
+    name: spark-sa-airflow
+    namespace: airflow

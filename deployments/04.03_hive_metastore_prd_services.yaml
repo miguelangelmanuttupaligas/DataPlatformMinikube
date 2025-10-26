@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-metastore-prd
+  namespace: metastore
+spec:
+  selector:
+    app: hive-metastore-prd
+  ports:
+    - port: 9083
+      targetPort: 9083

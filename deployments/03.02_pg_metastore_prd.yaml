@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresdb-metastore-prd
+  namespace: metastore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresdb-metastore-prd
+  template:
+    metadata:
+      labels:
+        app: postgresdb-metastore-prd
+    spec:
+      containers:
+        - name: postgresdb-metastore-prd
+          image: postgres:16
+          envFrom:
+            - configMapRef:
+                name: postgres-metastore-prd-config
+            - secretRef:
+                name: postgres-metastore-prd-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-metastore-prd-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-metastore-prd-storage
+          hostPath:
+            path: /mnt/nfs-postgres-prd-metastore
+            type: Directory
+---

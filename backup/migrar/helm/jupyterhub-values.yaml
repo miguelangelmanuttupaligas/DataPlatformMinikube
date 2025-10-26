@@ -1,0 +1,41 @@
+# This file can update the JupyterHub Helm chart's default configuration values.
+#
+# For reference see the configuration reference and default values, but make
+# sure to refer to the Helm chart version of interest to you!
+#
+# Introduction to YAML:     https://www.youtube.com/watch?v=cdLNKUoMc6c
+# Chart config reference:   https://zero-to-jupyterhub.readthedocs.io/en/stable/resources/reference.html
+# Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+# Available chart versions: https://hub.jupyter.org/helm-chart/
+#
+hub:
+  db:
+    type: sqlite-memory
+  networkPolicy:
+    enabled: true
+    interNamespaceAccessLabels: accept
+
+singleuser:
+  networkPolicy:
+    enabled: true
+    egressAllowRules:
+      privateIPs: true
+    interNamespaceAccessLabels: accept
+  image:
+    name: miguelmanuttupa/pyspark-notebook
+    tag: 3.5.0
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  serviceAccountName: spark
+  cmd: null  # Permite que la imagen personalizada defina el comando de inicio
+  extraEnv:
+    VARIABLE_ENTORNO_TEST: "true" 
+  storage:
+    type: none
+  cpu:
+    limit: 3
+    guarantee: 2
+  memory:
+    limit: 6G
+    guarantee: 4G
+  

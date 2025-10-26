@@ -1,0 +1,64 @@
+ldapsearch -x -H ldap://192.168.1.52 -D "ldapreader@cajafinanciera.com" -W -b "CN=Users,DC=cajafinanciera,DC=com" "(sAMAccountName=usuario1)"
+
+uid: usuario1
+userPassword: a!P1234fehr5t
+memberOf: devs
+
+uid: usuario2
+userPassword: a!P1234fehr6t
+memberOf: admins
+
+uid: ldapreader
+userPassword: readonlypass!P
+
+
+  apiServerConfig: |
+    #https://github.com/apache/airflow/blob/3.0.2/airflow-core/src/airflow/config_templates/default_webserver_config.py
+    from __future__ import annotations
+    import os
+    from flask_appbuilder.const import AUTH_LDAP
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    # Flask-WTF flag for CSRF
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = None
+    # ----------------------------------------------------
+    # AUTHENTICATION CONFIG (specific to FAB auth manager)
+    # ----------------------------------------------------
+    # For details on how to set up each of the following authentication, see
+    # http://flask-appbuilder.readthedocs.io/en/latest/security.html# authentication-methods
+    # for details.
+    AUTH_TYPE = AUTH_LDAP
+    AUTH_LDAP_SERVER = "ldap://openldap.data-services.svc.cluster.local:389" # Use "ldap://localhost:1389/" when using the provided LDAP on docker-compose
+    AUTH_LDAP_USE_TLS = False
+
+    # registration configs
+    AUTH_ROLE_ADMIN = "Admin"
+    AUTH_USER_REGISTRATION = True  # allow users who are not already in the FAB DB
+    AUTH_USER_REGISTRATION_ROLE = "Public"  # this role will be given in addition to any AUTH_ROLES_MAPPING
+    AUTH_LDAP_FIRSTNAME_FIELD = "givenName"
+    AUTH_LDAP_LASTNAME_FIELD = "sn"
+    AUTH_LDAP_EMAIL_FIELD = "mail"  # if null in LDAP, email is set to: "{username}@email.notfound"
+
+    # search configs
+    AUTH_LDAP_SEARCH = "ou=Users,dc=cajafinanciera,dc=com"  # the LDAP search base
+    AUTH_LDAP_SEARCH_FILTER = "(memberOf=cn=devs,ou=DataModelers,ou=DataAnalytics,ou=Groups,dc=cajafinanciera,dc=com)"
+
+    AUTH_LDAP_UID_FIELD = "uid"  # the username field
+
+    # a mapping from LDAP DN to a list of FAB roles
+    AUTH_ROLES_MAPPING = {
+        "CN=devs,OU=DataModelers,OU=DataAnalytics,OU=Groups,DC=cajafinanciera,DC=com": ["Viewer"],
+        "cn=devs,ou=DataModelers,ou=DataAnalytics,ou=Groups,dc=cajafinanciera,dc=com": ["Viewer"],
+        "CN=admins,OU=DataModelers,OU=DataAnalytics,OU=Groups,DC=cajafinanciera,DC=com": ["Admin"],        
+        "cn=admins,ou=DataModelers,ou=DataAnalytics,ou=Groups,dc=cajafinanciera,dc=com": ["Admin"],
+    }
+
+    AUTH_LDAP_BIND_USER = "cn=ldapreader,ou=Users,dc=cajafinanciera,dc=com"  # the special bind username for search
+    AUTH_LDAP_BIND_PASSWORD = "readonlypass"  # the special bind password for search
+
+    # the LDAP user attribute which has their role DNs, default is "memberOf"
+    AUTH_LDAP_GROUP_FIELD = "memberOf"
+    # if we should replace ALL the user's roles each login, or only on registration
+    AUTH_ROLES_SYNC_AT_LOGIN = True
+    # force users to re-auth after 30min of inactivity (to keep roles in sync)
+    PERMANENT_SESSION_LIFETIME = 1800

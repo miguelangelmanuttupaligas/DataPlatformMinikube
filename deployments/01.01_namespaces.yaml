@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-services
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jupyterhub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: airflow
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kyuubi
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kyuubi-prd
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metastore
+---

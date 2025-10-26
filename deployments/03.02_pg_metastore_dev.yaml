@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresdb-metastore-dev
+  namespace: metastore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresdb-metastore-dev
+  template:
+    metadata:
+      labels:
+        app: postgresdb-metastore-dev
+    spec:
+      containers:
+        - name: postgresdb-metastore-dev
+          image: postgres:16
+          envFrom:
+            - configMapRef:
+                name: postgres-metastore-dev-config
+            - secretRef:
+                name: postgres-metastore-dev-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-metastore-dev-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-metastore-dev-storage
+          hostPath:
+            path: /mnt/nfs-postgres-dev-metastore
+            type: Directory
+---

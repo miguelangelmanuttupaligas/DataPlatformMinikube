@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mssql-secret
+  namespace: data-services
+type: Opaque
+data:
+  SA_PASSWORD: TTIzOThXRUpLISA=   # base64 de M2398WEJK!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql-deployment
+  namespace: data-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql
+  template:
+    metadata:
+      labels:
+        app: mssql
+    spec:
+      containers:
+      - name: mssql
+        image: mcr.microsoft.com/mssql/server:2022-CU10-ubuntu-22.04
+        ports:
+        - containerPort: 1433
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: MSSQL_SA_PASSWORD
+          value: "StrongPassword!23"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: mssql-data
+          mountPath: /var/opt/mssql
+      volumes:
+      - name: mssql-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-service
+  namespace: data-services
+spec:
+  selector:
+    app: mssql
+  ports:
+  - protocol: TCP
+    port: 1433
+    targetPort: 1433
+    nodePort: 30433
+  type: NodePort

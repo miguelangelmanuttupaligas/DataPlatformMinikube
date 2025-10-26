@@ -1,0 +1,18 @@
+FROM apache/airflow:3.0.2
+# Java 11 para Spark 3.5.x
+USER root
+# Instala Java y utilidades necesarias
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jre-headless procps && \
+    apt-get clean
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+RUN export JAVA_HOME
+ENV PATH=$JAVA_HOME/bin:$PATH
+RUN export PATH
+
+USER airflow
+
+COPY airflow-requirements.txt /opt/airflow-requirements.txt
+
+RUN pip install --no-cache-dir -r /opt/airflow-requirements.txt

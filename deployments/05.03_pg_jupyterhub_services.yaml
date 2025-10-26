@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresdb-jupyterhub
+  namespace: jupyterhub
+spec:
+  selector:
+    app: postgresdb-jupyterhub
+  ports:
+    - port: 5432
+      targetPort: 5432

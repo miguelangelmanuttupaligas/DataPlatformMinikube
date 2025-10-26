@@ -1,0 +1,193 @@
+airflowHome: /opt/airflow
+defaultAirflowRepository: miguelmanuttupa/airflow-k8s
+defaultAirflowTag: "3.0.2.1"
+defaultAirflowDigest: ~
+airflowVersion: "3.0.2"
+
+images:
+  airflow:
+    repository: miguelmanuttupa/airflow-k8s
+    tag: 3.0.2.1
+    digest: ~
+    pullPolicy: IfNotPresent
+  gitSync:
+    repository: registry.k8s.io/git-sync/git-sync
+    tag: v3.4.0
+    pullPolicy: IfNotPresent
+
+executor: "KubernetesExecutor"
+workers:
+  serviceAccount:
+    create: false
+    name: spark-sa-airflow
+  env:
+    - name: POD_NAMESPACE
+      value: "airflow"
+    - name: SERVICE_ACCOUNT_NAME
+      value: "spark-sa-airflow"
+    - name: S3_ENDPOINT_URL
+      value: "http://minio.data-services.svc.cluster.local:9000"
+    - name: ACCESS_KEY
+      value: "hive-key-prd-132fsad"
+    - name: SECRET_KEY
+      value: "hive-secret-prd-13rfsdfsadf"
+    - name: WAREHOUSE_DIR
+      value: "s3a://warehouse-prd/"
+    - name: METASTORE_URI
+      value: "thrift://hive-metastore-prd.metastore.svc.cluster.local:9083"
+    - name: NB_USER
+      value: "user_ch_prod"
+  safeToEvict: false
+allowPodLaunching: true
+
+# extraSecrets:
+#   airflow-spark-conn-secret:
+#     stringData: |
+#       AIRFLOW_CONN_SPARK_CONN: "spark://spark_conn@k8s://https://kubernetes.default:443?deploy-mode=cluster&spark-binary=spark-submit&kubernetes-namespace=airflow"
+#   my-custom-secret:
+#     stringData: |
+#       MY_CUSTOM_ENV_VAR: "my_custom_value"
+
+# secret:
+#   - envName: "AIRFLOW_CONN_SPARK_CONN"
+#     secretName: "airflow-spark-conn-secret"
+#     secretKey: "AIRFLOW_CONN_SPARK_CONN"
+#   - envName: "MY_CUSTOM_ENV_VAR"
+#     secretName: "my-custom-secret"
+#     secretKey: "MY_CUSTOM_ENV_VAR"
+
+# Environment variables for all airflow containers
+env: #[]
+  - name: POD_NAMESPACE
+    value: "airflow"
+  - name: SERVICE_ACCOUNT_NAME
+    value: "spark-sa-airflow"
+  - name: S3_ENDPOINT_URL
+    value: "http://minio.data-services.svc.cluster.local:9000"
+  - name: ACCESS_KEY
+    value: "hive-key-prd-132fsad"
+  - name: SECRET_KEY
+    value: "hive-secret-prd-13rfsdfsadf"
+  - name: WAREHOUSE_DIR
+    value: "s3a://warehouse-prd/"
+  - name: METASTORE_URI
+    value: "thrift://hive-metastore-prd.metastore.svc.cluster.local:9083"
+  - name: NB_USER
+    value: "user_ch_prod"
+
+# Fernet key settings
+fernetKey: ~
+fernetKeySecretName: airflow-fernet-key
+fernetKeySecretAnnotations: {}
+
+# Flask secret key for Airflow Webserver: `[webserver] secret_key` in airflow.cfg
+webserverSecretKeySecretName: my-webserver-secret
+
+apiServer:
+  defaultUser:
+    enabled: false
+    role: Admin
+    username: admin1223
+    email: admin@example.com
+    firstName: admin
+    lastName: user
+    password: 342wef8924jsd
+  service:
+    type: NodePort
+    annotations: {}
+    ports:
+      - name: api-server
+        port: "{{ .Values.ports.apiServer }}"
+        targetPort: "{{ .Values.ports.apiServer }}"
+        nodePort: 31151
+  apiServerConfig: ~
+  # apiServerConfig: |
+  #   #https://github.com/apache/airflow/blob/3.0.2/airflow-core/src/airflow/config_templates/default_webserver_config.py
+  #   from __future__ import annotations
+  #   import os
+  #   from flask_appbuilder.const import AUTH_LDAP
+  #   basedir = os.path.abspath(os.path.dirname(__file__))
+
+  #   # Flask-WTF flag for CSRF
+  #   WTF_CSRF_ENABLED = True
+  #   WTF_CSRF_TIME_LIMIT = None
+
+  #   # ----------------------------------------------------
+  #   # AUTHENTICATION CONFIG (specific to FAB auth manager)
+  #   # ----------------------------------------------------
+  #   # For details on how to set up each of the following authentication, see
+  #   # http://flask-appbuilder.readthedocs.io/en/latest/security.html# authentication-methods
+  #   # for details.
+  #   AUTH_TYPE = AUTH_LDAP
+  #   AUTH_LDAP_SERVER = "ldap://openldap.data-services.svc.cluster.local:389"
+  #   AUTH_LDAP_USE_TLS = False
+
+  #   AUTH_LDAP_BIND_USER = "cn=ldapreader24g890uwef,ou=Users,dc=cajafinanciera,dc=com"
+  #   AUTH_LDAP_BIND_PASSWORD = "24f98ifwe9ua"
+
+  #   AUTH_LDAP_SEARCH = "ou=Users,dc=cajafinanciera,dc=com"
+
+  #   AUTH_LDAP_UID_FIELD = "uid"
+
+  #   AUTH_LDAP_FIRSTNAME_FIELD = "givenName"
+  #   AUTH_LDAP_LASTNAME_FIELD = "sn"
+  #   AUTH_LDAP_EMAIL_FIELD = "mail"
+
+  #   AUTH_USER_REGISTRATION = True
+  #   AUTH_USER_REGISTRATION_ROLE = "Op"
+
+  #   AUTH_ROLES_SYNC_AT_LOGIN = False
+    
+
+scheduler:
+  env: #[]
+    - name: POD_NAMESPACE
+      value: "airflow"
+    - name: SERVICE_ACCOUNT_NAME
+      value: "spark-sa-airflow"
+    - name: S3_ENDPOINT_URL
+      value: "http://minio.data-services.svc.cluster.local:9000"
+    - name: ACCESS_KEY
+      value: "hive-key-prd-132fsad"
+    - name: SECRET_KEY
+      value: "hive-secret-prd-13rfsdfsadf"
+    - name: WAREHOUSE_DIR
+      value: "s3a://warehouse-prd/"
+    - name: METASTORE_URI
+      value: "thrift://hive-metastore-prd.metastore.svc.cluster.local:9083"
+    - name: NB_USER
+      value: "user_ch_prod"
+  safeToEvict: false
+
+postgresql:
+  enabled: false # true
+
+data:
+  metadataConnection:
+    user: airflow
+    pass: 34fg8u9werfuisdf
+    protocol: postgresql
+    host: postgresdb-airflow
+    port: 5432
+    db: airflow
+    sslmode: disable
+
+dags:
+  gitSync:
+    enabled: true
+    # git repository URL
+    repo: https://github.com/miguelangelmanuttupaligas/dags-sync.git
+    branch: master
+    rev: HEAD
+    depth: 1
+    maxFailures: 0
+    subPath: ""
+    credentialsSecret: git-credentials
+
+logs:
+  persistence:
+    enabled: true
+    size: 5Gi
+    annotations: {}
+    storageClassName: local-path
+    existingClaim: airflow-logs-pvc

@@ -1,0 +1,71 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+ARG base_img=spark:3.5.0-scala2.12-java17-python3-ubuntu
+
+FROM $base_img
+WORKDIR /
+
+###########################################
+# Set the Spark home directory for building
+###########################################
+ENV SPARK_HOME_BUILD=/opt/spark
+
+# Reset to root to run installation tasks
+USER 0
+
+# Instalar Python 3.11 y configurarlo como default
+RUN apt-get update && \
+    apt-get install -y software-properties-common curl gnupg && \
+    add-apt-repository ppa:deadsnakes/ppa -y && \
+    apt-get update && \
+    apt-get install -y python3.11 python3.11-dev python3.11-venv && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    update-alternatives --set python3 /usr/bin/python3.11 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python && \
+    pip install --upgrade pip setuptools && \
+    rm -rf /var/lib/apt/lists/* /root/.cache
+
+
+# RUN mkdir ${SPARK_HOME_BUILD}/python
+# RUN apt-get update && \
+#     apt install -y python3 python3-pip && \
+#     pip3 install --upgrade pip setuptools && \
+#     # Removed the .cache to save space
+#     rm -rf /root/.cache && rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/*
+
+COPY python/pyspark ${SPARK_HOME_BUILD}/python/pyspark
+COPY python/lib ${SPARK_HOME_BUILD}/python/lib
+
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/com.microsoft.sqlserver_mssql-jdbc-12.4.2.jre11.jar https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/12.4.2.jre11/mssql-jdbc-12.4.2.jre11.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/io.delta_delta-spark_2.12-3.2.0.jar https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.2.0/delta-spark_2.12-3.2.0.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/io.delta_delta-storage-3.2.0.jar https://repo1.maven.org/maven2/io/delta/delta-storage/3.2.0/delta-storage-3.2.0.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/org.antlr_antlr4-runtime-4.9.3.jar https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.9.3/antlr4-runtime-4.9.3.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/org.checkerframework_checker-qual-3.42.0.jar https://repo1.maven.org/maven2/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/org.postgresql_postgresql-42.7.3.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar
+RUN curl -L -o ${SPARK_HOME_BUILD}/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar
+
+
+WORKDIR /opt/spark/work-dir
+ENTRYPOINT [ "/opt/entrypoint.sh" ]
+
+# Specify the User that the actual main process will run as
+ARG spark_uid=185
+USER ${spark_uid}

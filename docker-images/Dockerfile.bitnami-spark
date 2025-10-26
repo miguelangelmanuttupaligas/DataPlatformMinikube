@@ -1,0 +1,15 @@
+FROM bitnami/spark:3.5.0
+LABEL maintainer="Miguel Manuttupa <manuttupa.ligas@gmail>"
+USER root
+RUN install_packages curl
+USER 1001
+RUN curl https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar --output /opt/bitnami/spark/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar 
+RUN curl https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/12.4.2.jre11/mssql-jdbc-12.4.2.jre11.jar --output /opt/bitnami/spark/jars/com.microsoft.sqlserver_mssql-jdbc-12.4.2.jre11.jar
+RUN curl https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.2.0/delta-spark_2.12-3.2.0.jar --output /opt/bitnami/spark/jars/io.delta_delta-spark_2.12-3.2.0.jar
+RUN curl https://repo1.maven.org/maven2/io/delta/delta-storage/3.2.0/delta-storage-3.2.0.jar --output /opt/bitnami/spark/jars/io.delta_delta-storage-3.2.0.jar
+RUN curl https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.9.3/antlr4-runtime-4.9.3.jar --output /opt/bitnami/spark/jars/org.antlr_antlr4-runtime-4.9.3.jar
+RUN curl https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar --output /opt/bitnami/spark/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar
+RUN curl https://repo1.maven.org/maven2/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar --output /opt/bitnami/spark/jars/org.checkerframework_checker-qual-3.42.0.jar
+RUN curl https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar --output /opt/bitnami/spark/jars/org.postgresql_postgresql-42.7.3.jar
+RUN curl https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar --output /opt/bitnami/spark/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar
+ 

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-airflow-config
+  namespace: airflow
+data:
+  POSTGRES_USER: "airflow"
+  POSTGRES_DB: "airflow"
+  POSTGRES_PASSWORD: "34fg8u9werfuisdf"

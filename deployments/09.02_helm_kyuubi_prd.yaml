@@ -1,0 +1,103 @@
+# Kyuubi server numbers
+replicaCount: 1
+podManagementPolicy: OrderedReady
+minReadySeconds: 30
+revisionHistoryLimit: 10
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    partition: 0
+image:
+  repository: miguelmanuttupa/kyuubi-k8s
+  pullPolicy: IfNotPresent
+  tag: 1.10.2
+imagePullSecrets: []
+serviceAccount:
+  create: false
+  name: kyuubi-prd
+priorityClass:
+  create: false
+  name: ~
+  value: 1000000000
+
+server:
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
+    port: 10009
+    service:
+      type: NodePort
+      port: "{{ .Values.server.thriftBinary.port }}"
+      nodePort: 30108 # NodePort for Thrift Binary protocol
+      annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftHttp.port }}"
+      nodePort: ~
+      annotations: {}  
+
+kyuubiConfDir: /opt/kyuubi/conf
+kyuubiConf:
+  kyuubiEnv: |
+    export SPARK_HOME=/opt/spark
+    export SPARK_CONF_DIR=/opt/spark/conf
+    export SPARK_ENGINE_HOME=/opt/kyuubi/externals/engines/spark
+    export TRINO_ENGINE_HOME=/opt/kyuubi/externals/engines/trino
+    export HIVE_ENGINE_HOME=/opt/kyuubi/externals/engines/hive
+    export JAVA_HOME=/opt/java/openjdk
+
+  #kyuubi.authentication=NONE
+  kyuubiDefaults: |
+    kyuubi.authentication=LDAP
+    kyuubi.authentication.ldap.baseDN=dc=cajafinanciera,dc=com
+    kyuubi.authentication.ldap.domain=cajafinanciera.com
+    kyuubi.authentication.ldap.binddn=cn=ldapreader24g890uwef,ou=Users,dc=cajafinanciera,dc=com
+    kyuubi.authentication.ldap.bindpw=24f98ifwe9ua
+    kyuubi.authentication.ldap.url=ldap://openldap.data-services.svc.cluster.local:389/
+    kyuubi.authentication.ldap.groupClassKey=groupOfNames
+    kyuubi.authentication.ldap.groupDNPattern=CN=%s,OU=DataModelers,OU=DataAnalytics,OU=Groups,DC=cajafinanciera,DC=com
+    kyuubi.authentication.ldap.groupFilter=devs,admins
+    kyuubi.authentication.ldap.groupMembershipKey=member
+
+    spark.kubernetes.container.image=miguelmanuttupa/pyspark-k8s-python3.11:3.5.0
+    spark.kubernetes.container.image.pullPolicy=IfNotPresent
+    spark.kubernetes.file.upload.path=s3a://kyuubi/spark
+    spark.master=k8s://https://kubernetes.default.svc:443
+    spark.submit.deployMode=cluster
+    kyuubi.kubernetes.namespace=kyuubi-prd
+    spark.kubernetes.namespace=kyuubi-prd
+    kyuubi.frontend.bind.host=0.0.0.0
+    kyuubi.frontend.bind.port=10009
+    kyuubi.engine.type=SPARK_SQL
+    kyuubi.engine.share.level=USER
+    kyuubi.session.engine.initialize.timeout=1000000
+    kyuubi.session.engine.idle.timeout=60
+    spark.submit.deployMode=cluster
+    spark.port.maxRetries=2
+    spark.executor.instances=1
+    spark.executor.cores=2
+    spark.executor.memory=2g
+    spark.kubernetes.authenticate.driver.serviceAccountName=kyuubi-prd
+    spark.kubernetes.executor.deletesOnTermination=true
+    spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+    spark.hadoop.fs.s3a.endpoint=http://minio.data-services.svc.cluster.local:9000
+    spark.hadoop.fs.s3a.path.style.access=true
+    spark.hadoop.fs.s3a.access.key=kyuubi-key-prd-35yg4
+    spark.hadoop.fs.s3a.secret.key=kyuubi-secret-prd-34gsdfsa
+    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension
+    spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+    spark.sql.catalogImplementation=hive
+    spark.sql.warehouse.dir=s3a://warehouse-prd/
+    hive.metastore.uris=thrift://hive-metastore-prd.metastore.svc.cluster.local:9083
