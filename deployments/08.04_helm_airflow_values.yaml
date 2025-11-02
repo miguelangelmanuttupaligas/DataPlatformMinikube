@@ -140,23 +140,23 @@ apiServer:
     
 
 scheduler:
-  env: #[]
-    - name: POD_NAMESPACE
-      value: "airflow"
-    - name: SERVICE_ACCOUNT_NAME
-      value: "spark-sa-airflow"
-    - name: S3_ENDPOINT_URL
-      value: "http://minio.data-services.svc.cluster.local:9000"
-    - name: ACCESS_KEY
-      value: "hive-key-prd-132fsad"
-    - name: SECRET_KEY
-      value: "hive-secret-prd-13rfsdfsadf"
-    - name: WAREHOUSE_DIR
-      value: "s3a://warehouse-prd/"
-    - name: METASTORE_URI
-      value: "thrift://hive-metastore-prd.metastore.svc.cluster.local:9083"
-    - name: NB_USER
-      value: "user_ch_prod"
+#  env: #[]
+#    - name: POD_NAMESPACE
+#      value: "airflow"
+#    - name: SERVICE_ACCOUNT_NAME
+#      value: "spark-sa-airflow"
+#    - name: S3_ENDPOINT_URL
+#      value: "http://minio.data-services.svc.cluster.local:9000"
+#    - name: ACCESS_KEY
+#      value: "hive-key-prd-132fsad"
+#    - name: SECRET_KEY
+#      value: "hive-secret-prd-13rfsdfsadf"
+#    - name: WAREHOUSE_DIR
+#      value: "s3a://warehouse-prd/"
+#    - name: METASTORE_URI
+#      value: "thrift://hive-metastore-prd.metastore.svc.cluster.local:9083"
+#    - name: NB_USER
+#      value: "user_ch_prod"
   safeToEvict: false
 
 postgresql:
